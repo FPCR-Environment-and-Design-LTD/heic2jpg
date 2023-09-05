@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>HEIC2JPG | Oli Everard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8368997072131126"
+     crossorigin="anonymous"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.1/index.js" integrity="sha512-eEZcFEz8toxNm9+DHMf8Q3+wgZjU0no5THCktIEhCyKk3JEFhn/uUaDCXO5MP7VtvLJQ5/VcLZut7bAHQO1C8Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+     <link rel="icon" type="image/x-icon" href="https://www.olieverard.co.uk/src/favicon.ico">
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
+     <meta name="viewport" content="width=device-width">
+     <meta name="description" content="Bulk HEIC2JPG Converter | No Uploading to Internet | Private and Secure"> 
+
+  </head>
+
+  <body class="bg-white">
+    <div id="navbar-container"></div>
+
+    <script>
+
+      fetch('https://www.olieverard.co.uk/components/navbar.html')
+        .then(response => response.text())
+        .then(html => {
+          document.querySelector('#navbar-container').innerHTML = html;
+        });
+    </script>
+
+
+<section class="text-gray-600 body-font">
+  <div class="container mx-auto flex px-5 py-24 items-center justify-center flex-col">
+    <div class="text-center lg:w-2/3 w-full">
+      <h1 class="title-font sm:text-4xl text-3xl mb-4 font-medium text-gray-900">Offline HEIC2JPG Converter</h1>
+      <p class="mb-8 leading-relaxed">To use the HEIC2JPG Converter, please submit a HEIC image file, or a zip file containing multiple HEIC images, and they will be converted to JPGs for you. All of this is done client side, there's no uploading of your images to the internet! Please note this tool does not copy image metadata over. It also may take a long time for multiple images.</p>
+      <form>
+        <input class="ml-4 inline-flex text-gray-700 bg-gray-100 border-0 py-2 px-6 focus:outline-none hover:bg-gray-200 rounded text-lg my-4" type="file" accept=".heic, .zip">
+        <button type="submit" class="inline-flex text-white bg-blue-500 border-0 py-2 px-6 focus:outline-none hover:bg-blue-600 rounded text-lg my-4">Convert</button>
+      </form>
+      <p class="mb-8 leading-relaxed">You need an internet connection to access this site, but the files you submit never leave your computer. The tool handles the files completley offline, ensuring that your images remain private and secure.
+      </p>
+      <p class="mb-8 leading-relaxed">Because of this, it may take a while to process a large amount of images. Please note you must keep the tab as the active window on your computer, or the conversion may pause. I have added a progress indicator so you can tell how many images have already been processed by the tool. I tested converting a few hundred images, and it successfully processed them all eventually. Your mileage may vary on larger amounts of images, but I see no reason why they wouldn't be processed eventually. 
+      </p>
+      <p class="mb-8 leading-relaxed my-4">Most HEIC conversion tools have a limit on the amount of files that you can convert in one go, but this one does not. This is because most other tools pass the images to an external server, but this one handles them on your device. I try to build all <a href="https://www.olieverard.co.uk/tools">my tools</a> this way, to ensure privacy, security, and simplicity. 
+      </p>
+      <p class="mb-8 leading-relaxed"> If you wish to see the code yourself, please go to <a href="https://www.olieverard.co.uk/repositories"> My GitHub Repositories Page</a> and view the source code for yourself. The code for all of the tools you can find on this site is all there! 
+      </p>
+      <p class="mb-8 leading-relaxed"> -Oli Everard
+    </div>
+  </div>
+</section>
+
+<script>
+
+  const form = document.querySelector('form');
+  const input = form.querySelector('input[type="file"]');
+  const convertButton = form.querySelector('button[type="submit"]');
+  const processingMessage = document.createElement('div');
+  processingMessage.innerText = 'Processing... This may take a while. File will download automatically. Images processed so far: 0';
+  processingMessage.style.display = 'none';
+  processingMessage.classList.add('text-blue-500');
+  form.appendChild(processingMessage);
+  
+  let imageCount = 0;
+  
+  function convertHEICtoJPG(blob) {
+  processingMessage.style.display = 'block';
+  return heic2any({
+    blob: blob,
+    toType: 'image/jpeg',
+    quality: 0.8
+  }).then((output) => {
+    const outputBlob = new Blob([output], {type: 'image/jpeg'});
+    const outputUrl = URL.createObjectURL(outputBlob);
+    const link = document.createElement('a');
+    link.href = outputUrl;
+    link.download = blob.name.replace(/\.heic$/i, '.jpg');
+    link.click();
+    imageCount++;
+    updateProcessingMessage();
+  });
+}
+
+function updateProcessingMessage() {
+  processingMessage.innerText = `Processing... This may take a while. File will download automatically. Images processed so far: ${imageCount}`;
+  if (imageCount > 0) {
+    processingMessage.style.display = 'block';
+  } else {
+    processingMessage.style.display = 'none';
+  }
+}
+
+  
+  function convertZipToJPG(zipFile) {
+    processingMessage.style.display = 'block';
+    return JSZip.loadAsync(zipFile).then(async (zip) => {
+      const jpgZip = new JSZip();
+  
+      await Promise.all(Object.keys(zip.files).map(async (filename) => {
+        const file = zip.files[filename];
+        if (!file.dir && (file.name.endsWith('.heic') || file.name.endsWith('.HEIC'))) {
+          const output = await heic2any({
+            blob: await file.async('blob'),
+            toType: 'image/jpeg',
+            quality: 0.8
+          });
+          jpgZip.file(file.name.replace(/\.heic$/i, '.jpg'), output);
+          imageCount++;
+          updateProcessingMessage();
+        }
+      }), imageCount = 0);
+  
+      const jpgZipBlob = await jpgZip.generateAsync({type:"blob"});
+      const jpgZipUrl = URL.createObjectURL(jpgZipBlob);
+      const link = document.createElement('a');
+      link.href = jpgZipUrl;
+      link.download = zipFile.name.replace(/\.zip$/i, '_jpg.zip');
+      link.click();
+      processingMessage.innerText = `Processing... This may take a while. File will download automatically. Images processed so far: ${imageCount}`;
+      processingMessage.style.display = 'none';
+    });
+  }
+  
+  convertButton.addEventListener('click', async (event) => {
+    event.preventDefault();
+    const file = input.files[0];
+    if (!file) return;
+    if (file.name.endsWith('.heic')) {
+      await convertHEICtoJPG(file);
+    } else if (file.name.endsWith('.zip')) {
+      await convertZipToJPG(file);
+    }
+  });
+  
+  input.addEventListener('change', () => {
+    convertButton.disabled = !input.value;
+  });
+  
+  </script>
+  
+
+    </body>
+
+</html>
+  

@@ -1,441 +1,628 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0ea5e9" />
-  <title>HEIC → JPG — Ultra‑Visual Frontend Converter</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root{
-      --bg: #0b1220; /* deep slate */
-      --panel: rgba(255,255,255,0.08);
-      --glass: rgba(255,255,255,0.15);
-      --text: #e6eefc;
-      --muted: #a7b2c7;
-      --accent: #38bdf8; /* sky-400 */
-      --accent-2: #c084fc; /* purple-400 */
-      --ok: #22c55e; --warn:#f59e0b; --err:#ef4444;
-    }
-    *{ box-sizing: border-box }
-    html, body { height: 100% }
-    body{
-      margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--text); background: var(--bg);
-      overflow-x:hidden;
-    }
-    /* Animated aurora background */
-    .bg-aurora{
-      position: fixed; inset: 0; z-index: -1; filter: blur(40px) saturate(1.2);
-      background:
-        radial-gradient(40% 30% at 15% 10%, rgba(56,189,248,.25), transparent 60%),
-        radial-gradient(40% 35% at 85% 15%, rgba(192,132,252,.25), transparent 60%),
-        radial-gradient(35% 30% at 75% 75%, rgba(56,189,248,.18), transparent 60%),
-        radial-gradient(30% 25% at 25% 80%, rgba(192,132,252,.18), transparent 60%);
-      animation: float 16s ease-in-out infinite alternate;
-    }
-    @keyframes float { from{ transform: translateY(-2%) } to{ transform: translateY(2%) } }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HEIC → JPG — High-Performance Frontend Converter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0b1220; --panel:rgba(255,255,255,.08); --glass:rgba(255,255,255,.15);
+    --text:#e9f0ff; --muted:#a7b2c7; --accent:#38bdf8; --accent2:#c084fc;
+    --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--text); background:var(--bg); overflow-x:hidden}
+  .bg-aurora{position:fixed; inset:0; z-index:-1; filter:blur(40px) saturate(1.2);
+    background:
+      radial-gradient(40% 30% at 15% 10%, rgba(56,189,248,.25), transparent 60%),
+      radial-gradient(40% 35% at 85% 15%, rgba(192,132,252,.25), transparent 60%),
+      radial-gradient(35% 30% at 75% 75%, rgba(56,189,248,.18), transparent 60%),
+      radial-gradient(30% 25% at 25% 80%, rgba(192,132,252,.18), transparent 60%);
+    animation:float 16s ease-in-out infinite alternate
+  }
+  @keyframes float{from{transform:translateY(-2%)} to{transform:translateY(2%)}}
+  .wrap{max-width:1100px; margin:0 auto; padding:32px 20px 80px}
+  header{display:flex; gap:16px; align-items:center}
+  .logo{width:52px; height:52px; border-radius:16px; display:grid; place-items:center; position:relative;
+    background:conic-gradient(from 210deg, var(--accent), var(--accent2)); box-shadow:0 10px 30px rgba(56,189,248,.25); overflow:hidden}
+  .logo::after{content:""; position:absolute; inset:3px; border-radius:13px; background:rgba(0,0,0,.25); backdrop-filter:blur(4px) saturate(1.1)}
+  .logo svg{position:relative; z-index:1}
+  h1{font-size:clamp(24px,4vw,42px); margin:0}
+  .subtitle{color:var(--muted); margin-top:6px}
 
-    .wrap{ max-width:1100px; margin:0 auto; padding: 32px 20px 80px }
-    header{ display:flex; align-items:center; gap:16px; }
-    .logo{
-      width:52px; height:52px; border-radius:16px; display:grid; place-items:center; position:relative;
-      background: conic-gradient(from 210deg, var(--accent), var(--accent-2));
-      box-shadow: 0 10px 30px rgba(56,189,248,.25);
-      overflow:hidden;
-    }
-    .logo::after{ content:""; position:absolute; inset:3px; border-radius:13px; background:rgba(0,0,0,.25); backdrop-filter: blur(4px) saturate(1.1) }
-    .logo svg{ position:relative; z-index:1 }
-    h1{ font-size: clamp(24px, 4vw, 42px); margin: 0 }
-    .subtitle{ color: var(--muted); margin-top:6px }
+  .panel{margin-top:24px; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+    border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
 
-    .panel{ margin-top:24px; background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
-      border: 1px solid rgba(255,255,255,.12); border-radius: 18px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
-    }
+  .diag{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+  .badge{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:var(--panel); border:1px solid rgba(255,255,255,.12)}
+  .dot{width:10px; height:10px; border-radius:50%}
+  .help{border-bottom:1px dashed rgba(255,255,255,.25); cursor:help}
 
-    /* Diagnostics */
-    .diag{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-    .badge{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background: var(--panel); border:1px solid rgba(255,255,255,.12) }
-    .dot{ width:10px; height:10px; border-radius:50% }
+  .controls{display:grid; grid-template-columns:1.2fr 1fr 1fr 1fr; gap:12px; margin-top:12px}
+  .control{background:var(--panel); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:12px 14px}
+  .control label{display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size:14px; color:#d6e1f7}
+  .control small{color:var(--muted)}
+  .row{display:flex; gap:10px; margin-top:8px; align-items:center}
+  input[type="range"]{width:100%}
+  .toggle{display:flex; align-items:center; gap:8px}
+  .toggle input{width:38px; height:20px}
 
-    /* Controls */
-    .controls{ display:grid; grid-template-columns: 1.3fr 1fr 1fr; gap:12px; margin-top:12px }
-    .control{ background:var(--panel); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:12px 14px }
-    .control label{ display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size:14px; color:#d6e1f7 }
-    .control small{ color: var(--muted) }
-    input[type="range"]{ width:100% }
+  .dropzone{margin-top:16px; padding:24px; border:1.5px dashed rgba(255,255,255,.25); border-radius:18px; display:grid; gap:14px; place-items:center; text-align:center; background:rgba(255,255,255,.04);
+    transition:transform .2s ease, border-color .2s ease, background .2s ease}
+  .dropzone.drag{transform:scale(1.01); background:rgba(56,189,248,.08); border-color:var(--accent)}
+  .dropzone .cta{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+  .btn{appearance:none; border:none; cursor:pointer; padding:10px 14px; border-radius:12px; font-weight:800; color:#0a0f1a;
+    background:linear-gradient(180deg, #8bcef9, #42b8f6); box-shadow:0 8px 20px rgba(56,189,248,.35)}
+  .btn.secondary{background:rgba(255,255,255,.12); color:var(--text); box-shadow:none; border:1px solid rgba(255,255,255,.16)}
+  .btn.ghost{background:transparent; color:var(--text); border:1px dashed rgba(255,255,255,.2)}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
 
-    /* Dropzone */
-    .dropzone{
-      margin-top:16px; padding: 24px; border: 1.5px dashed rgba(255,255,255,.25); border-radius: 18px; display:grid; gap:14px; place-items:center; text-align:center; background: rgba(255,255,255,.04);
-      transition: transform .2s ease, border-color .2s ease, background .2s ease;
-    }
-    .dropzone.drag{ transform: scale(1.01); background: rgba(56,189,248,.08); border-color: var(--accent) }
-    .dropzone .cta{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center }
-    .btn{ appearance:none; border:none; cursor:pointer; padding:10px 14px; border-radius:12px; font-weight:700; color:#0a0f1a;
-      background: linear-gradient(180deg, #8bcef9, #42b8f6); box-shadow: 0 8px 20px rgba(56,189,248,.35);
-    }
-    .btn.secondary{ background: rgba(255,255,255,.12); color: var(--text); box-shadow:none; border:1px solid rgba(255,255,255,.16)}
-    .btn.ghost{ background: transparent; color: var(--text); border:1px dashed rgba(255,255,255,.2)}
-    .btn:disabled{ opacity:.5; cursor:not-allowed }
+  .progress{height:12px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; border:1px solid rgba(255,255,255,.16)}
+  .bar{height:100%; width:0%; background:linear-gradient(90deg, var(--accent), var(--accent2)); transition:width .25s ease}
 
-    /* Progress */
-    .progress{ height:12px; border-radius:999px; background: rgba(255,255,255,.08); overflow:hidden; border:1px solid rgba(255,255,255,.16) }
-    .bar{ height:100%; width:0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .25s ease }
+  .grid{margin-top:18px; display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px}
+  .card{position:relative; background:var(--panel); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:12px; overflow:hidden; min-height:180px}
+  .thumb{height:120px; border-radius:10px; background:rgba(0,0,0,.25); display:grid; place-items:center; overflow:hidden}
+  .thumb img{width:100%; height:100%; object-fit:cover}
+  .meta{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; font-size:13px}
+  .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .status{color:var(--muted); font-weight:600}
+  .ring{--p:0; width:40px; height:40px; border-radius:50%; background:conic-gradient(var(--accent) calc(var(--p)*1%), rgba(255,255,255,.15) 0);
+    mask:radial-gradient(circle 18px, transparent 18px, #000 19px); display:grid; place-items:center; font-size:11px; font-weight:800; color:#eaf6ff}
+  .ring.done{background:linear-gradient(180deg, #22c55e, #16a34a); mask:none; border-radius:10px; padding:2px 8px}
 
-    /* File grid */
-    .grid{ margin-top:18px; display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:14px }
-    .card{ position:relative; background:var(--panel); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:12px; overflow:hidden; min-height: 180px }
-    .thumb{ height: 120px; border-radius:10px; background: rgba(0,0,0,.25); display:grid; place-items:center; overflow:hidden }
-    .thumb img{ width:100%; height:100%; object-fit:cover }
-    .meta{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; font-size:13px }
-    .name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-    .status{ color: var(--muted); font-weight:600 }
-    .ring{ --p:0; width:40px; height:40px; border-radius:50%; background:
-        conic-gradient(var(--accent) calc(var(--p)*1%), rgba(255,255,255,.15) 0);
-      mask: radial-gradient(circle 18px, transparent 18px, #000 19px);
-      display:grid; place-items:center; font-size:11px; font-weight:800; color:#eaf6ff }
-    .ring.done{ background: linear-gradient(180deg, #22c55e, #16a34a); mask:none; border-radius:10px; padding:2px 8px }
+  .footer{margin-top:28px; color:var(--muted); font-size:13px; text-align:center}
+  #confetti{position:fixed; inset:0; pointer-events:none}
+  @media(max-width:900px){.controls{grid-template-columns:1fr}}
+</style>
 
-    .footer{ margin-top:28px; color:var(--muted); font-size:13px; text-align:center }
-
-    /* Confetti canvas */
-    #confetti{ position: fixed; inset:0; pointer-events:none }
-
-    @media (max-width: 800px){ .controls{ grid-template-columns:1fr } }
-  </style>
-
-  <!-- Libraries: heic2any (libheif WASM), JSZip (zip reading), fflate (zip writing - faster) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.min.js"></script>
+<!-- Libraries (main thread) -->
+<script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.min.js"></script>
 </head>
 <body>
-  <div class="bg-aurora"></div>
-  <canvas id="confetti"></canvas>
-  <div class="wrap">
-    <header>
-      <div class="logo" aria-hidden="true">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4 7a3 3 0 013-3h4a3 3 0 013 3v1h1a3 3 0 013 3v3a3 3 0 01-3 3h-1v1a3 3 0 01-3 3H7a3 3 0 01-3-3V7z" stroke="#fff" stroke-width="2" opacity=".75"/>
-          <path d="M8 9.5l2.5 3L14 9.5l3 4" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div>
-        <h1>HEIC → JPG Converter</h1>
-        <div class="subtitle">Frontend‑only · Single HEIC or ZIP bulk · Fast, visual, and animated</div>
-      </div>
-    </header>
+<div class="bg-aurora"></div>
+<canvas id="confetti"></canvas>
 
-    <!-- Diagnostics -->
-    <div class="panel">
-      <div class="diag" id="diag">
-        <div class="badge"><span class="dot" id="d-wasm"></span> WebAssembly</div>
-        <div class="badge"><span class="dot" id="d-heic"></span> HEIC Engine</div>
-        <div class="badge"><span class="dot" id="d-zipr"></span> ZIP Reader</div>
-        <div class="badge"><span class="dot" id="d-zipw"></span> ZIP Writer</div>
-        <div class="badge" title="Estimated CPU budget per tick"><span class="dot" id="d-par"></span> Parallelism <span id="parVal" style="margin-left:6px; color:#cfe9ff"></span></div>
-      </div>
+<div class="wrap">
+  <header>
+    <div class="logo" aria-hidden="true">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path d="M4 7a3 3 0 013-3h4a3 3 0 013 3v1h1a3 3 0 013 3v3a3 3 0 01-3 3h-1v1a3 3 0 01-3 3H7a3 3 0 01-3-3V7z" stroke="#fff" stroke-width="2" opacity=".75"/>
+        <path d="M8 9.5l2.5 3L14 9.5l3 4" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      </svg>
     </div>
-
-    <!-- Controls -->
-    <div class="controls">
-      <div class="control">
-        <label>JPEG Quality <span id="qualLabel">92%</span></label>
-        <input type="range" min="50" max="100" value="92" id="quality" />
-        <small>Higher = larger file, better detail</small>
-      </div>
-      <div class="control">
-        <label>Parallel Conversions <span id="concLabel">auto</span></label>
-        <input type="range" min="1" max="8" value="0" id="concurrency" />
-        <small>Set 0 for auto (based on your CPU)</small>
-      </div>
-      <div class="control">
-        <label>Output <span>.jpg</span></label>
-        <div style="display:flex; gap:10px; margin-top:8px">
-          <button class="btn secondary" id="dlAll" disabled>Download All as .zip</button>
-          <button class="btn ghost" id="clear">Clear</button>
-          <button class="btn ghost" id="cancel" disabled>Cancel</button>
-        </div>
-        <small id="summary">No files yet</small>
-      </div>
+    <div>
+      <h1>HEIC → JPG Converter (High-Performance)</h1>
+      <div class="subtitle">Workers · OffscreenCanvas · Interleaved ZIP · Lazy previews</div>
     </div>
+  </header>
 
-    <!-- Dropzone -->
-    <div class="dropzone" id="drop">
-      <div>
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke="#bfe7ff" stroke-width="2" stroke-linecap="round"/>
-          <rect x="3" y="12" width="18" height="8" rx="3" stroke="#bfe7ff" stroke-width="2" opacity=".55"/>
-        </svg>
-      </div>
-      <div style="font-weight:800; font-size:18px">Drag & drop a HEIC file or a ZIP of HEICs</div>
-      <div class="cta">
-        <input id="picker" type="file" hidden accept=".heic,.heif,.zip,application/zip" />
-        <button class="btn" id="pickOne">Choose…</button>
-        <label class="btn secondary" style="cursor:pointer">
-          <input id="pickerMulti" type="file" multiple hidden accept=".heic,.heif,.zip,application/zip" />
-          Choose Multiple…
-        </label>
-      </div>
-      <div class="progress" aria-hidden="true"><div class="bar" id="totalBar"></div></div>
-      <small class="subtitle" id="totalLabel">Idle</small>
-    </div>
-
-    <!-- Grid -->
-    <div class="grid" id="grid"></div>
-
-    <div class="footer">
-      All processing happens locally in your browser. EXIF metadata may not be preserved. Multi‑image HEICs convert the first image. Very large files can be memory‑intensive.
+  <!-- Diagnostics -->
+  <div class="panel">
+    <div class="diag" id="diag">
+      <div class="badge help" title="Browser supports WebAssembly (required)"><span class="dot" id="d-wasm"></span> WebAssembly</div>
+      <div class="badge help" title="HEIC engine available inside workers"><span class="dot" id="d-heic"></span> HEIC Engine</div>
+      <div class="badge help" title="ZIP read support"><span class="dot" id="d-zipr"></span> ZIP Reader</div>
+      <div class="badge help" title="ZIP write support"><span class="dot" id="d-zipw"></span> ZIP Writer</div>
+      <div class="badge help" title="Detected logical CPU cores"><span class="dot" id="d-par"></span> Parallelism <span id="parVal" style="margin-left:6px; color:#cfe9ff"></span></div>
+      <div class="badge help" title="OffscreenCanvas available in workers"><span class="dot" id="d-off"></span> OffscreenCanvas</div>
     </div>
   </div>
 
-  <script>
-  // —— tiny utilities ——
-  const $ = (s, r=document) => r.querySelector(s);
-  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-  const fmtBytes = (n) => n < 1024 ? `${n} B` : n < 1024**2 ? `${(n/1024).toFixed(1)} KB` : n < 1024**3 ? `${(n/1024**2).toFixed(1)} MB` : `${(n/1024**3).toFixed(2)} GB`;
-  const sleep = (ms) => new Promise(r=>setTimeout(r, ms));
-  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+  <!-- Controls -->
+  <div class="controls">
+    <div class="control">
+      <label>JPEG Quality <span id="qualLabel">92%</span></label>
+      <input type="range" min="50" max="100" value="92" id="quality" />
+      <small>Higher = larger file, better detail</small>
+    </div>
 
-  // —— global state ——
-  let tasks = []; // queue items {id, name, srcBlob, status, el}
-  let outputs = []; // {name, blob}
-  let inFlight = 0, cancelled = false, started = false;
-  let autoConc = Math.max(2, Math.min(4, (navigator.hardwareConcurrency||4)-2));
-  let concurrency = 0; // 0=auto
-  let totalSteps = 0, completedSteps = 0; // for total progress
+    <div class="control">
+      <label>Parallel Conversions <span id="concLabel">auto</span></label>
+      <input type="range" min="0" max="12" value="0" id="concurrency" />
+      <small>0 = auto (based on your CPU)</small>
+    </div>
 
-  // —— diagnostics ——
-  function setDot(el, ok){ el.style.background = ok ? "var(--ok)" : "var(--err)" }
+    <div class="control">
+      <label>Fast Mode <span id="fastLabel">off</span></label>
+      <div class="row">
+        <label class="toggle">
+          <input type="checkbox" id="fastMode" />
+          <span>Auto downscale big images</span>
+        </label>
+      </div>
+      <div class="row">
+        <span style="white-space:nowrap">Max edge:</span>
+        <input type="range" min="1600" max="6000" value="3600" id="maxEdge" />
+        <span id="edgeLabel">3600 px</span>
+      </div>
+      <small>Big speedup on huge HEICs. Off.</small>
+    </div>
+
+    <div class="control">
+      <label>Output <span>.jpg</span></label>
+      <div class="row">
+        <button class="btn secondary" id="dlAll" disabled>Download All as .zip</button>
+        <button class="btn ghost" id="clear">Clear</button>
+        <button class="btn ghost" id="cancel" disabled>Cancel</button>
+      </div>
+      <small id="summary">No files yet</small>
+    </div>
+  </div>
+
+  <!-- Dropzone -->
+  <div class="dropzone" id="drop">
+    <div>
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke="#bfe7ff" stroke-width="2" stroke-linecap="round"/>
+        <rect x="3" y="12" width="18" height="8" rx="3" stroke="#bfe7ff" stroke-width="2" opacity=".55"/>
+      </svg>
+    </div>
+    <div style="font-weight:800; font-size:18px">Drag & drop a HEIC file or a ZIP of HEICs</div>
+    <div class="cta">
+      <input id="picker" type="file" hidden accept=".heic,.heif,.zip,application/zip" />
+      <button class="btn" id="pickOne">Choose…</button>
+      <label class="btn secondary" style="cursor:pointer">
+        <input id="pickerMulti" type="file" multiple hidden accept=".heic,.heif,.zip,application/zip" />
+        Choose Multiple…
+      </label>
+    </div>
+    <div class="progress" aria-hidden="true"><div class="bar" id="totalBar"></div></div>
+    <small class="subtitle" id="totalLabel">Idle</small>
+  </div>
+
+  <!-- Grid -->
+  <div class="grid" id="grid"></div>
+
+  <div class="footer">
+    All processing happens locally in your browser. EXIF metadata may not be preserved. Multi-image HEICs convert the first image. Very large files can be memory-intensive.
+  </div>
+</div>
+
+<!-- Worker script (inlined, created as a Blob URL) -->
+<script>
+  // Worker source as a string (so this stays a single-file app)
+  const WORKER_SRC = `
+  self.onmessage = async (ev) => {
+    const msg = ev.data || {};
+    if (msg.type === 'init') {
+      try {
+        // Feature checks
+        const hasOffscreen = typeof OffscreenCanvas !== 'undefined';
+        // Load heic2any inside the worker
+        importScripts('https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js');
+        self.postMessage({ type: 'inited', ok: true, hasOffscreen });
+      } catch (e) {
+        self.postMessage({ type: 'inited', ok: false, error: e?.message || String(e) });
+      }
+      return;
+    }
+
+    if (msg.type === 'convert') {
+      const { id, name, buf, quality, fast, maxEdge } = msg;
+      const abortFlag = { aborted: false };
+      let aborted = false;
+      const stage = (s, pct)=> self.postMessage({ type:'stage', id, stage:s, pct });
+
+      try {
+        stage('reading', 10);
+        const heicBlob = new Blob([buf], { type: 'image/heic' });
+
+        stage('decoding', 30);
+        // heic2any returns a Blob
+        const jpgBlob = await self.heic2any({ blob: heicBlob, toType: 'image/jpeg', quality, multiple: false });
+
+        let outBlob = jpgBlob;
+
+        if (fast) {
+          stage('resample', 55);
+          // Downscale if larger than maxEdge using OffscreenCanvas (faster in worker)
+          const bitmap = await createImageBitmap(jpgBlob);
+          const w = bitmap.width, h = bitmap.height;
+          const edge = Math.max(w, h);
+          if (edge > maxEdge && typeof OffscreenCanvas !== 'undefined') {
+            const scale = maxEdge / edge;
+            const tw = Math.round(w * scale), th = Math.round(h * scale);
+            const canvas = new OffscreenCanvas(tw, th);
+            const ctx = canvas.getContext('2d', { alpha: false });
+            ctx.drawImage(bitmap, 0, 0, tw, th);
+            // convertToBlob uses browser's encoder, usually quite fast
+            outBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality });
+          }
+          bitmap.close && bitmap.close();
+        }
+
+        stage('finalize', 85);
+        const ab = await outBlob.arrayBuffer();
+        // Transfer the ArrayBuffer back to main thread for zero-copy
+        self.postMessage({ type:'done', id, name, buf: ab }, [ab]);
+      } catch (err) {
+        self.postMessage({ type:'error', id, name, error: err?.message || String(err) });
+      }
+    }
+  };
+  `;
+
+  // ---- tiny utilities ----
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+  const fmtBytes = (n)=> n<1024?`${n} B`: n<1024**2?`${(n/1024).toFixed(1)} KB`: n<1024**3?`${(n/1024**2).toFixed(1)} MB`:`${(n/1024**3).toFixed(2)} GB`;
+  const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
+
+  // ---- diagnostics ----
+  function setDot(el, ok){ el.style.background = ok ? 'var(--ok)' : 'var(--err)' }
   function initDiagnostics(){
     setDot($('#d-wasm'), typeof WebAssembly !== 'undefined');
-    setDot($('#d-heic'), !!window.heic2any);
     setDot($('#d-zipr'), !!window.JSZip);
     setDot($('#d-zipw'), !!window.fflate);
-    $('#parVal').textContent = `${navigator.hardwareConcurrency||4} cores`
+    $('#parVal').textContent = `${navigator.hardwareConcurrency||4} cores`;
+    setDot($('#d-par'), !!navigator.hardwareConcurrency);
+    setDot($('#d-off'), typeof OffscreenCanvas !== 'undefined');
   }
 
-  // —— progress ——
+  // ---- UI components ----
+  function fileCard(name, size){
+    const card = document.createElement('div'); card.className='card';
+    card.innerHTML = `
+      <div class="thumb" aria-live="polite"><span style="opacity:.7">Preview</span></div>
+      <div class="meta"><div class="name" title="${name}">${name}</div><div class="ring"><span class="ringNum">0%</span></div></div>
+      <div class="meta"><div class="status">Queued</div><div class="size">${size?fmtBytes(size):''}</div></div>
+    `;
+    $('#grid').appendChild(card);
+    const ringEl = card.querySelector('.ring');
+    const ringNum = card.querySelector('.ringNum');
+    return {
+      el: card,
+      setStatus: (t)=> card.querySelector('.status').textContent = t,
+      setRing: (pct)=>{ ringEl.style.setProperty('--p', pct); ringNum.textContent = pct+'%'; },
+      done: ()=>{ ringEl.classList.add('done'); ringEl.textContent='Done'; }
+    };
+  }
+
+  // ---- State ----
+  let pool = [];            // worker pool
+  let free = [];            // free worker indices
+  let tasks = [];           // queue
+  let started = false, cancelled = false;
+  let outputsCount = 0, totalCount = 0;
+  let totalDone = 0;
+  let zipWriter = null, zipChunks = [], zipClosed = false;
+
+  let autoConc = Math.max(2, Math.min( Math.max(2, (navigator.hardwareConcurrency||4) - 1), 8 ));
+  let userConc = 0; // 0=auto
+  let hasHeicInWorker = false;
+
+  // ---- Progress ----
   function setTotalProgress(pct, label){
     $('#totalBar').style.width = pct + '%';
     if(label) $('#totalLabel').textContent = label;
   }
-  function bumpTotal(step=1, label){ completedSteps += step; setTotalProgress(Math.round(100*completedSteps/Math.max(1,totalSteps)), label) }
-
-  function fileCard(name, size){
-    const card = document.createElement('div'); card.className = 'card';
-    card.innerHTML = `
-      <div class="thumb" aria-live="polite"><span style="opacity:.7">Preview</span></div>
-      <div class="meta">
-        <div class="name" title="${name}">${name}</div>
-        <div class="ring" aria-label="progress ring"><span class="ringNum">0%</span></div>
-      </div>
-      <div class="meta">
-        <div class="status">Queued</div>
-        <div class="size">${size?fmtBytes(size):''}</div>
-      </div>`;
-    $('#grid').appendChild(card);
-    return {
-      el: card,
-      setStatus: (t)=> card.querySelector('.status').textContent = t,
-      setRing: (pct)=>{ card.querySelector('.ring').style.setProperty('--p', pct); card.querySelector('.ringNum').textContent = pct+"%"; },
-      done: ()=>{ const r=card.querySelector('.ring'); r.classList.add('done'); r.textContent='Done' }
-    }
+  function bumpTotal(label){
+    totalDone++;
+    const pct = Math.round((totalDone/Math.max(1,totalCount))*100);
+    setTotalProgress(pct, label || `Converted ${totalDone}/${totalCount}`);
   }
 
-  // —— queue engine ——
-  async function runQueue(){
-    if(started) return; started = true; cancelled = false;
-    $('#cancel').disabled = false;
-    setTotalProgress(0, 'Starting…');
-    const pool = [];
-    const conc = concurrency || autoConc; // auto if 0
-    while(tasks.some(t=>t.status!=='done') && !cancelled){
-      while(inFlight < conc){
-        const next = tasks.find(t=>t.status==='queued');
-        if(!next) break;
-        inFlight++; next.status='running';
-        pool.push(convertOne(next).finally(()=>{ inFlight--; }));
-      }
-      await Promise.race(pool).catch(()=>{});
-    }
-    await Promise.allSettled(pool);
-
-    $('#cancel').disabled = true;
-    started = false;
-    if(cancelled){ setTotalProgress(0, 'Canceled'); return; }
-
-    // Build zip if more than 1 output
-    if(outputs.length === 0) return;
-    if(outputs.length === 1){
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(outputs[0].blob);
-      a.download = outputs[0].name; a.textContent = 'Download ' + outputs[0].name;
-      $('#dlAll').disabled = false; $('#dlAll').onclick = ()=> a.click();
-      $('#summary').textContent = `Ready: ${outputs[0].name} (${fmtBytes(outputs[0].blob.size)})`;
-      celebrate();
-    } else {
-      setTotalProgress(98, 'Packaging .zip…');
-      const filesObj = {};
-      outputs.forEach(o=> filesObj[o.name] = new Uint8Array());
-      // Gather ArrayBuffers with minimal compression (store)
-      const filePairs = [];
-      for(const o of outputs){
-        const ab = await o.blob.arrayBuffer();
-        filePairs.push([o.name, new Uint8Array(ab)]);
-      }
-      const zipped = fflate.zipSync(Object.fromEntries(filePairs), { level: 0 }); // store only for speed
-      const zipBlob = new Blob([zipped], { type: 'application/zip' });
-      const url = URL.createObjectURL(zipBlob);
-      $('#dlAll').disabled = false; $('#dlAll').onclick = ()=>{
-        const a = document.createElement('a'); a.href = url; a.download = 'converted-jpgs.zip'; a.click();
-      };
-      $('#summary').textContent = `Ready: ${outputs.length} images · ${fmtBytes(zipBlob.size)} .zip`;
-      setTotalProgress(100, 'Done');
-      celebrate();
-    }
-  }
-
-  async function convertOne(task){
-    const view = task.view;
-    try{
-      view.setStatus('Reading…'); view.setRing(10);
-      const heicBlob = task.srcBlob;
-
-      // smooth staged progress — conversion is the heavy step but heic2any lacks internal progress events
-      view.setStatus('Converting…'); view.setRing(35);
-      const quality = parseInt($('#quality').value, 10) / 100;
-      const jpgBlob = await window.heic2any({ blob: heicBlob, toType: 'image/jpeg', quality });
-
-      if(cancelled) return;
-      view.setStatus('Finalizing…'); view.setRing(80);
-
-      // Create preview
-      const url = URL.createObjectURL(jpgBlob);
-      const img = new Image(); img.decoding = 'async'; img.src = url;
-      img.onload = ()=>{ const t = task.card.querySelector('.thumb'); t.innerHTML=''; t.appendChild(img) };
-
-      // Filename swap
-      const name = task.name.replace(/\.(heic|heif)$/i, '') + '.jpg';
-      outputs.push({ name, blob: jpgBlob });
-
-      view.setRing(100); view.done(); view.setStatus('Done');
-      bumpTotal(1, `Converted ${outputs.length}/${tasks.length}…`);
-      task.status='done';
-    }catch(err){
-      console.error(err);
-      task.status='done';
-      task.card.querySelector('.status').textContent = 'Failed';
-      task.card.style.outline = '2px solid var(--err)';
-      bumpTotal(1, 'A file failed to convert');
-    }
-  }
-
-  // —— file intake ——
-  async function handleFiles(fileList){
-    resetSession(false);
-    const files = Array.from(fileList||[]);
-    if(files.length === 0) return;
-    // Partition by type
-    const zips = files.filter(f=>/\.zip$/i.test(f.name) || f.type === 'application/zip');
-    const heics = files.filter(f=>/\.(heic|heif)$/i.test(f.name));
-
-    let totalCount = 0; outputs = []; tasks = []; completedSteps=0;
-
-    // HEICs directly
-    for(const f of heics){
-      const cardView = fileCard(f.name, f.size);
-      const id = crypto.randomUUID();
-      tasks.push({ id, name: f.name, srcBlob: f, status:'queued', card: cardView.el, view: cardView });
-      totalCount++;
-    }
-
-    // Zips
-    for(const z of zips){
-      $('#totalLabel').textContent = `Reading ZIP: ${z.name}`;
-      const ab = await z.arrayBuffer();
-      const zip = await JSZip.loadAsync(ab, { checkCRC32: true, createFolders: true });
-      const entries = [];
-      zip.forEach((path, entry)=>{ if(!entry.dir && /\.(heic|heif)$/i.test(entry.name)) entries.push(entry) });
-      if(entries.length === 0){ continue; }
-
-      for(const entry of entries){
-        const blob = await entry.async('blob');
-        const f = new File([blob], entry.name, { type: 'image/heic' });
-        const cardView = fileCard(entry.name, blob.size);
-        const id = crypto.randomUUID();
-        tasks.push({ id, name: entry.name, srcBlob: f, status:'queued', card: cardView.el, view: cardView });
-      }
-      totalCount += entries.length;
-    }
-
-    if(totalCount === 0){ $('#totalLabel').textContent = 'No HEIC files found.'; return; }
-
-    totalSteps = totalCount; // 1 step per file
-    $('#summary').textContent = `${totalCount} file(s) queued`;
-    setTotalProgress(2, 'Queued…');
-
-    runQueue();
-  }
-
-  // —— UI wiring ——
-  function resetSession(clearGrid=true){
-    cancelled = false; started = false; inFlight = 0; outputs = []; completedSteps = 0; totalSteps = 0;
-    $('#cancel').disabled = true; $('#dlAll').disabled = true; $('#totalLabel').textContent='Idle'; setTotalProgress(0);
-    if(clearGrid) $('#grid').innerHTML = '';
-  }
-
-  function cancelAll(){ cancelled = true; $('#cancel').disabled = true; $('#totalLabel').textContent='Canceling…'; }
-
+  // ---- Confetti ----
   function celebrate(){
     const cvs = $('#confetti'); const ctx = cvs.getContext('2d');
-    const { innerWidth:w, innerHeight:h } = window; cvs.width=w; cvs.height=h;
-    const N = 160; const parts = Array.from({length:N}, (_,i)=>({
-      x: Math.random()*w, y: -10, vx: (Math.random()-.5)*2, vy: 2+Math.random()*3,
-      r: 3+Math.random()*4, a: 1, hue: 180+Math.random()*140
+    const {innerWidth:w, innerHeight:h} = window; cvs.width = w; cvs.height = h;
+    const N = 160; const parts = Array.from({length:N},()=>({
+      x: Math.random()*w, y:-10, vx:(Math.random()-.5)*2, vy:2+Math.random()*3,
+      r:3+Math.random()*4, a:1, hue:180+Math.random()*140
     }));
-    let t=0; const anim = ()=>{
+    let t=0; (function anim(){
       ctx.clearRect(0,0,w,h);
       parts.forEach(p=>{
-        p.vy += 0.03; p.x += p.vx; p.y += p.vy; p.a -= .006; p.a=Math.max(0,p.a);
+        p.vy += .03; p.x += p.vx; p.y += p.vy; p.a -= .006; p.a=Math.max(0,p.a);
         ctx.globalAlpha = p.a; ctx.fillStyle = `hsl(${p.hue}, 90%, 60%)`;
         ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
       });
-      t++; if(t<600 && parts.some(p=>p.a>0)) requestAnimationFrame(anim); else ctx.clearRect(0,0,w,h);
-    }; anim();
+      t++; if (t<600 && parts.some(p=>p.a>0)) requestAnimationFrame(anim); else ctx.clearRect(0,0,w,h);
+    })();
+  }
+
+  // ---- ZIP (interleaved write) ----
+  function initZip(){
+    zipChunks = [];
+    const z = new fflate.Zip({ level: 0 }); // store only — fastest
+    z.ondata = (err, chunk, final) => {
+      if (err) console.error(err);
+      zipChunks.push(chunk);
+      zipClosed = final;
+      if (final) {
+        const blob = new Blob(zipChunks, { type: 'application/zip' });
+        const url = URL.createObjectURL(blob);
+        $('#dlAll').disabled = false;
+        $('#dlAll').onclick = () => {
+          const a = document.createElement('a');
+          a.href = url; a.download = 'converted-jpgs.zip'; a.click();
+        };
+        $('#summary').textContent = `Ready: ${outputsCount} images · ${fmtBytes(blob.size)} .zip`;
+        setTotalProgress(100, 'Done');
+        celebrate();
+      }
+    };
+    return z;
+  }
+
+  function addFileToZip(zip, name, u8){
+    // Adds and immediately closes each entry (best perf for store mode)
+    zip.add(name, u8);
+  }
+
+  function closeZip(zip){
+    try { zip.end(); } catch(e){ console.error(e); }
+  }
+
+  // ---- Worker pool ----
+  function makeWorker(){
+    const blob = new Blob([WORKER_SRC], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    const w = new Worker(url, { type: 'classic' });
+    URL.revokeObjectURL(url);
+    return w;
+  }
+
+  async function initPool(n){
+    pool.forEach(w=>w.terminate());
+    pool = []; free = [];
+    hasHeicInWorker = false;
+
+    await Promise.all(Array.from({length:n}, (_,i)=> new Promise(res=>{
+      const w = makeWorker();
+      w.onmessage = (ev)=>{
+        const d = ev.data || {};
+        if (d.type === 'inited') {
+          hasHeicInWorker = hasHeicInWorker || !!d.ok;
+          res();
+        }
+      };
+      w.postMessage({ type:'init' });
+      pool[i] = w; free.push(i);
+    })));
+
+    setDot($('#d-heic'), hasHeicInWorker);
+  }
+
+  function borrowWorker(){
+    return free.length ? free.pop() : -1;
+  }
+  function releaseWorker(i){
+    if (i>=0) free.push(i);
+  }
+
+  // ---- Tasks / Queue ----
+  async function enqueueFiles(fileList){
+    resetSession(false);
+    const files = Array.from(fileList||[]);
+    if (!files.length) return;
+
+    const zips = files.filter(f=>/\.zip$/i.test(f.name) || f.type==='application/zip');
+    const heics = files.filter(f=>/\.(heic|heif)$/i.test(f.name));
+
+    totalCount = 0; totalDone = 0; outputsCount = 0;
+    tasks = [];
+
+    // direct HEICs
+    for (const f of heics){
+      const view = fileCard(f.name, f.size);
+      tasks.push({ name:f.name, size:f.size, blob:f, view, status:'queued' });
+      totalCount++;
+    }
+
+    // ZIPs (lazy per-entry)
+    for (const z of zips){
+      $('#totalLabel').textContent = `Reading ZIP: ${z.name}`;
+      try{
+        const ab = await z.arrayBuffer();
+        const zip = await JSZip.loadAsync(ab, { checkCRC32: true, createFolders: true });
+        const entries = [];
+        zip.forEach((path, entry)=>{ if(!entry.dir && /\.(heic|heif)$/i.test(entry.name)) entries.push(entry); });
+        for (const entry of entries){
+          const view = fileCard(entry.name);
+          // Defer actual entry.async('blob') until we dispatch the task to a worker
+          tasks.push({ name:entry.name, size:entry._data?.uncompressedSize, entry, view, status:'queued' });
+        }
+        totalCount += entries.length;
+      }catch(e){
+        console.error('ZIP load failed', e);
+      }
+    }
+
+    if (!totalCount){ $('#totalLabel').textContent = 'No HEIC files found.'; return; }
+
+    $('#summary').textContent = `${totalCount} file(s) queued`;
+    setTotalProgress(2, 'Queued…');
+
+    // Init worker pool
+    const conc = (userConc||autoConc);
+    await initPool(conc);
+    await runQueue();
+  }
+
+  async function runQueue(){
+    started = true; cancelled = false;
+    $('#cancel').disabled = false;
+    zipWriter = initZip();
+
+    const conc = (userConc||autoConc);
+    let active = 0;
+
+    return new Promise(resolve=>{
+      const pump = async ()=>{
+        if (cancelled) {
+          $('#totalLabel').textContent = 'Canceled';
+          try { closeZip(zipWriter); } catch {}
+          resolve(); return;
+        }
+
+        // If all tasks done and none active, finish
+        const remaining = tasks.filter(t=>t.status!=='done' && t.status!=='running');
+        if (!remaining.length && active===0){
+          try { closeZip(zipWriter); } catch {}
+          $('#cancel').disabled = true; started = false;
+          resolve(); return;
+        }
+
+        // Fill up to concurrency
+        while (active < conc){
+          const next = tasks.find(t=>t.status==='queued');
+          if (!next) break;
+          next.status = 'running';
+          active++;
+          dispatchTask(next).finally(()=>{ active--; pump(); });
+        }
+      };
+      pump();
+    });
+  }
+
+  async function dispatchTask(task){
+    const { name, view } = task;
+    try{
+      view.setStatus('Reading…'); view.setRing(8);
+
+      // Get Blob (direct file or from ZIP entry lazily)
+      let blob;
+      if (task.blob) {
+        blob = task.blob;
+      } else if (task.entry) {
+        blob = await task.entry.async('blob');
+      } else {
+        throw new Error('No data');
+      }
+
+      // Borrow a worker
+      let wi = borrowWorker();
+      while (wi<0) await new Promise(r=>setTimeout(r,10)); // tiny wait
+      const w = pool[wi];
+
+      const quality = parseInt($('#quality').value,10)/100;
+      const fast = $('#fastMode').checked;
+      const maxEdge = parseInt($('#maxEdge').value,10);
+
+      // Setup message handlers for staged progress
+      const ringStage = (pct, label)=>{ view.setRing(pct); view.setStatus(label); };
+
+      const onMsg = (ev)=>{
+        const d = ev.data || {};
+        if (d.id !== task._id) return;
+        if (d.type === 'stage') {
+          const map = { reading: 12, decoding: 40, resample: 65, finalize: 85 };
+          const pct = d.pct || map[d.stage] || 30;
+          ringStage(pct, d.stage.charAt(0).toUpperCase() + d.stage.slice(1) + '…');
+        } else if (d.type === 'done') {
+          // Rewrap ArrayBuffer as Blob
+          const u8 = new Uint8Array(d.buf);
+          const outName = name.replace(/\.(heic|heif)$/i,'') + '.jpg';
+          addFileToZip(zipWriter, outName, u8);
+
+          outputsCount++;
+          ringStage(100, 'Done'); view.done();
+          bumpTotal(`Converted ${outputsCount}/${totalCount}`);
+          task.status='done';
+
+          // Lazy preview: only render for first 12 immediately, others on intersection
+          const card = view.el;
+          const renderPreview = ()=>{
+            const img = new Image(); img.decoding='async';
+            const url = URL.createObjectURL(new Blob([u8],{type:'image/jpeg'}));
+            img.onload = ()=>{ const t = card.querySelector('.thumb'); t.innerHTML=''; t.appendChild(img); URL.revokeObjectURL(url); };
+            img.src = url;
+          };
+          if ([...$('#grid').children].indexOf(card) < 12) renderPreview();
+          else {
+            const io = new IntersectionObserver((entries)=>{
+              entries.forEach(e=>{ if (e.isIntersecting){ renderPreview(); io.disconnect(); }});
+            }, { rootMargin:'200px' });
+            io.observe(card);
+            card.addEventListener('mouseenter', renderPreview, { once:true });
+          }
+
+          cleanup();
+        } else if (d.type === 'error') {
+          task.status='done'; view.setStatus('Failed'); view.setRing(100);
+          view.el.style.outline='2px solid var(--err)';
+          bumpTotal('A file failed');
+          cleanup();
+        }
+      };
+
+      const cleanup = ()=>{
+        w.removeEventListener('message', onMsg);
+        releaseWorker(wi);
+      };
+
+      w.addEventListener('message', onMsg);
+
+      // Send file data as transferable ArrayBuffer
+      const buf = await blob.arrayBuffer();
+      const id = crypto.randomUUID(); task._id = id;
+      w.postMessage({ type:'convert', id, name, buf, quality, fast, maxEdge }, [buf]);
+
+    }catch(e){
+      console.error(e);
+      task.status='done';
+      view.setStatus('Failed'); view.el.style.outline='2px solid var(--err)';
+      bumpTotal('A file failed');
+    }
+  }
+
+  // ---- Controls & wiring ----
+  function resetSession(clearGrid=true){
+    cancelled = false; started = false;
+    tasks = []; totalCount = 0; totalDone = 0; outputsCount = 0;
+    zipWriter = null; zipChunks = []; zipClosed = false;
+    $('#cancel').disabled = true; $('#dlAll').disabled = true; $('#totalLabel').textContent='Idle';
+    setTotalProgress(0);
+    if (clearGrid) $('#grid').innerHTML='';
+  }
+
+  function cancelAll(){
+    cancelled = true; $('#cancel').disabled = true; $('#totalLabel').textContent='Canceling…';
+    pool.forEach(w=>w.terminate());
+    pool = []; free = [];
+    try { if (zipWriter) closeZip(zipWriter); } catch {}
   }
 
   // Inputs
   $('#pickOne').onclick = ()=> $('#picker').click();
-  $('#picker').onchange = (e)=> handleFiles(e.target.files);
-  $('#pickerMulti').onchange = (e)=> handleFiles(e.target.files);
+  $('#picker').onchange = (e)=> enqueueFiles(e.target.files);
+  $('#pickerMulti').onchange = (e)=> enqueueFiles(e.target.files);
 
   // Drag & drop
   const dz = $('#drop');
-  ;['dragenter','dragover'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); dz.classList.add('drag') }))
-  ;['dragleave','dragend','drop'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag') }))
-  dz.addEventListener('drop', (e)=>{
-    const files = e.dataTransfer.files; handleFiles(files);
-  });
+  ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e=>{e.preventDefault(); e.stopPropagation(); dz.classList.add('drag');}));
+  ['dragleave','dragend','drop'].forEach(ev => dz.addEventListener(ev, e=>{e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag');}));
+  dz.addEventListener('drop', (e)=> enqueueFiles(e.dataTransfer.files));
 
   // Controls
-  $('#quality').oninput = (e)=> $('#qualLabel').textContent = e.target.value + '%';
-  $('#concurrency').oninput = (e)=>{
-    const v = parseInt(e.target.value, 10); concurrency = v; $('#concLabel').textContent = v===0? 'auto' : v;
-  };
+  $('#quality').oninput = (e)=> $('#qualLabel').textContent = e.target.value+'%';
+  $('#concurrency').oninput = (e)=>{ userConc = parseInt(e.target.value,10); $('#concLabel').textContent = userConc?String(userConc):'auto'; };
+  $('#fastMode').onchange = (e)=> $('#fastLabel').textContent = e.target.checked?'on':'off';
+  $('#maxEdge').oninput = (e)=> $('#edgeLabel').textContent = e.target.value+' px';
   $('#clear').onclick = ()=> resetSession();
   $('#cancel').onclick = ()=> cancelAll();
 
   // Boot
-  window.addEventListener('load', ()=>{
+  window.addEventListener('load', async ()=>{
     initDiagnostics();
-    $('#concLabel').textContent = 'auto';
-    if(!window.heic2any){ $('#totalLabel').textContent='HEIC engine not loaded. Check your connection.' }
-  });
+    $('#concLabel').textContent='auto';
+    $('#edgeLabel').textContent = $('#maxEdge').value + ' px';
+    $('#fastLabel').textContent = 'off';
 
-  </script>
+    // Spin up a tiny temp worker to verify HEIC-in-worker
+    await initPool( Math.min( (navigator.hardwareConcurrency||2), 2 ) );
+    // Re-init to auto conc when the first batch actually runs
+    pool.forEach(w=>w.terminate()); pool=[]; free=[];
+    setDot($('#d-heic'), hasHeicInWorker);
+  });
+</script>
 </body>
 </html>

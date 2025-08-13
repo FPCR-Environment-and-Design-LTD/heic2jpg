@@ -1,124 +1,441 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>HEIC2JPG | FPCR </title>
-    <script src="https://cdn.tailwindcss.com"></script>
-     <script src="https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.1/index.js" integrity="sha512-eEZcFEz8toxNm9+DHMf8Q3+wgZjU0no5THCktIEhCyKk3JEFhn/uUaDCXO5MP7VtvLJQ5/VcLZut7bAHQO1C8Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-     <link rel="icon" type="image/x-icon" href="https://www.fpcr.co.uk/wp-content/uploads/FPCR.png">
-     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
-     <meta name="viewport" content="width=device-width">
-     <meta name="description" content="Bulk HEIC2JPG Converter | No Uploading to Internet | Private and Secure"> 
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0ea5e9" />
+  <title>HEIC → JPG — Ultra‑Visual Frontend Converter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #0b1220; /* deep slate */
+      --panel: rgba(255,255,255,0.08);
+      --glass: rgba(255,255,255,0.15);
+      --text: #e6eefc;
+      --muted: #a7b2c7;
+      --accent: #38bdf8; /* sky-400 */
+      --accent-2: #c084fc; /* purple-400 */
+      --ok: #22c55e; --warn:#f59e0b; --err:#ef4444;
+    }
+    *{ box-sizing: border-box }
+    html, body { height: 100% }
+    body{
+      margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text); background: var(--bg);
+      overflow-x:hidden;
+    }
+    /* Animated aurora background */
+    .bg-aurora{
+      position: fixed; inset: 0; z-index: -1; filter: blur(40px) saturate(1.2);
+      background:
+        radial-gradient(40% 30% at 15% 10%, rgba(56,189,248,.25), transparent 60%),
+        radial-gradient(40% 35% at 85% 15%, rgba(192,132,252,.25), transparent 60%),
+        radial-gradient(35% 30% at 75% 75%, rgba(56,189,248,.18), transparent 60%),
+        radial-gradient(30% 25% at 25% 80%, rgba(192,132,252,.18), transparent 60%);
+      animation: float 16s ease-in-out infinite alternate;
+    }
+    @keyframes float { from{ transform: translateY(-2%) } to{ transform: translateY(2%) } }
 
-  </head>
+    .wrap{ max-width:1100px; margin:0 auto; padding: 32px 20px 80px }
+    header{ display:flex; align-items:center; gap:16px; }
+    .logo{
+      width:52px; height:52px; border-radius:16px; display:grid; place-items:center; position:relative;
+      background: conic-gradient(from 210deg, var(--accent), var(--accent-2));
+      box-shadow: 0 10px 30px rgba(56,189,248,.25);
+      overflow:hidden;
+    }
+    .logo::after{ content:""; position:absolute; inset:3px; border-radius:13px; background:rgba(0,0,0,.25); backdrop-filter: blur(4px) saturate(1.1) }
+    .logo svg{ position:relative; z-index:1 }
+    h1{ font-size: clamp(24px, 4vw, 42px); margin: 0 }
+    .subtitle{ color: var(--muted); margin-top:6px }
 
-  <body class="bg-white">
-    <div id="navbar-container"></div>
+    .panel{ margin-top:24px; background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      border: 1px solid rgba(255,255,255,.12); border-radius: 18px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
 
+    /* Diagnostics */
+    .diag{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .badge{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background: var(--panel); border:1px solid rgba(255,255,255,.12) }
+    .dot{ width:10px; height:10px; border-radius:50% }
 
-<section class="text-gray-600 body-font">
-  <div class="container mx-auto flex px-5 py-24 items-center justify-center flex-col">
-    <div class="text-center lg:w-2/3 w-full">
-      <h1 class="title-font sm:text-4xl text-3xl mb-4 font-medium text-gray-900">FPCR Offline HEIC2JPG Converter</h1>
-      <p class="mb-8 leading-relaxed">To use the HEIC2JPG Converter, please submit a HEIC image file, or a zip file containing multiple HEIC images, and they will be converted to JPGs for you. All of this is done client side, there's no uploading of your images to the internet! Please note this tool does not copy image metadata over. It also may take a long time for multiple images.</p>
-      <form>
-        <input class="ml-4 inline-flex text-gray-700 bg-gray-100 border-0 py-2 px-6 focus:outline-none hover:bg-gray-200 rounded text-lg my-4" type="file" accept=".heic, .zip">
-        <button type="submit" class="inline-flex text-white bg-blue-500 border-0 py-2 px-6 focus:outline-none hover:bg-blue-600 rounded text-lg my-4">Convert</button>
-      </form>
-      <p1>Please contact Oli Everard with any issues</p1>
+    /* Controls */
+    .controls{ display:grid; grid-template-columns: 1.3fr 1fr 1fr; gap:12px; margin-top:12px }
+    .control{ background:var(--panel); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:12px 14px }
+    .control label{ display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size:14px; color:#d6e1f7 }
+    .control small{ color: var(--muted) }
+    input[type="range"]{ width:100% }
+
+    /* Dropzone */
+    .dropzone{
+      margin-top:16px; padding: 24px; border: 1.5px dashed rgba(255,255,255,.25); border-radius: 18px; display:grid; gap:14px; place-items:center; text-align:center; background: rgba(255,255,255,.04);
+      transition: transform .2s ease, border-color .2s ease, background .2s ease;
+    }
+    .dropzone.drag{ transform: scale(1.01); background: rgba(56,189,248,.08); border-color: var(--accent) }
+    .dropzone .cta{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center }
+    .btn{ appearance:none; border:none; cursor:pointer; padding:10px 14px; border-radius:12px; font-weight:700; color:#0a0f1a;
+      background: linear-gradient(180deg, #8bcef9, #42b8f6); box-shadow: 0 8px 20px rgba(56,189,248,.35);
+    }
+    .btn.secondary{ background: rgba(255,255,255,.12); color: var(--text); box-shadow:none; border:1px solid rgba(255,255,255,.16)}
+    .btn.ghost{ background: transparent; color: var(--text); border:1px dashed rgba(255,255,255,.2)}
+    .btn:disabled{ opacity:.5; cursor:not-allowed }
+
+    /* Progress */
+    .progress{ height:12px; border-radius:999px; background: rgba(255,255,255,.08); overflow:hidden; border:1px solid rgba(255,255,255,.16) }
+    .bar{ height:100%; width:0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .25s ease }
+
+    /* File grid */
+    .grid{ margin-top:18px; display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:14px }
+    .card{ position:relative; background:var(--panel); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:12px; overflow:hidden; min-height: 180px }
+    .thumb{ height: 120px; border-radius:10px; background: rgba(0,0,0,.25); display:grid; place-items:center; overflow:hidden }
+    .thumb img{ width:100%; height:100%; object-fit:cover }
+    .meta{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; font-size:13px }
+    .name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+    .status{ color: var(--muted); font-weight:600 }
+    .ring{ --p:0; width:40px; height:40px; border-radius:50%; background:
+        conic-gradient(var(--accent) calc(var(--p)*1%), rgba(255,255,255,.15) 0);
+      mask: radial-gradient(circle 18px, transparent 18px, #000 19px);
+      display:grid; place-items:center; font-size:11px; font-weight:800; color:#eaf6ff }
+    .ring.done{ background: linear-gradient(180deg, #22c55e, #16a34a); mask:none; border-radius:10px; padding:2px 8px }
+
+    .footer{ margin-top:28px; color:var(--muted); font-size:13px; text-align:center }
+
+    /* Confetti canvas */
+    #confetti{ position: fixed; inset:0; pointer-events:none }
+
+    @media (max-width: 800px){ .controls{ grid-template-columns:1fr } }
+  </style>
+
+  <!-- Libraries: heic2any (libheif WASM), JSZip (zip reading), fflate (zip writing - faster) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.min.js"></script>
+</head>
+<body>
+  <div class="bg-aurora"></div>
+  <canvas id="confetti"></canvas>
+  <div class="wrap">
+    <header>
+      <div class="logo" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 7a3 3 0 013-3h4a3 3 0 013 3v1h1a3 3 0 013 3v3a3 3 0 01-3 3h-1v1a3 3 0 01-3 3H7a3 3 0 01-3-3V7z" stroke="#fff" stroke-width="2" opacity=".75"/>
+          <path d="M8 9.5l2.5 3L14 9.5l3 4" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>HEIC → JPG Converter</h1>
+        <div class="subtitle">Frontend‑only · Single HEIC or ZIP bulk · Fast, visual, and animated</div>
+      </div>
+    </header>
+
+    <!-- Diagnostics -->
+    <div class="panel">
+      <div class="diag" id="diag">
+        <div class="badge"><span class="dot" id="d-wasm"></span> WebAssembly</div>
+        <div class="badge"><span class="dot" id="d-heic"></span> HEIC Engine</div>
+        <div class="badge"><span class="dot" id="d-zipr"></span> ZIP Reader</div>
+        <div class="badge"><span class="dot" id="d-zipw"></span> ZIP Writer</div>
+        <div class="badge" title="Estimated CPU budget per tick"><span class="dot" id="d-par"></span> Parallelism <span id="parVal" style="margin-left:6px; color:#cfe9ff"></span></div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <div class="control">
+        <label>JPEG Quality <span id="qualLabel">92%</span></label>
+        <input type="range" min="50" max="100" value="92" id="quality" />
+        <small>Higher = larger file, better detail</small>
+      </div>
+      <div class="control">
+        <label>Parallel Conversions <span id="concLabel">auto</span></label>
+        <input type="range" min="1" max="8" value="0" id="concurrency" />
+        <small>Set 0 for auto (based on your CPU)</small>
+      </div>
+      <div class="control">
+        <label>Output <span>.jpg</span></label>
+        <div style="display:flex; gap:10px; margin-top:8px">
+          <button class="btn secondary" id="dlAll" disabled>Download All as .zip</button>
+          <button class="btn ghost" id="clear">Clear</button>
+          <button class="btn ghost" id="cancel" disabled>Cancel</button>
+        </div>
+        <small id="summary">No files yet</small>
+      </div>
+    </div>
+
+    <!-- Dropzone -->
+    <div class="dropzone" id="drop">
+      <div>
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke="#bfe7ff" stroke-width="2" stroke-linecap="round"/>
+          <rect x="3" y="12" width="18" height="8" rx="3" stroke="#bfe7ff" stroke-width="2" opacity=".55"/>
+        </svg>
+      </div>
+      <div style="font-weight:800; font-size:18px">Drag & drop a HEIC file or a ZIP of HEICs</div>
+      <div class="cta">
+        <input id="picker" type="file" hidden accept=".heic,.heif,.zip,application/zip" />
+        <button class="btn" id="pickOne">Choose…</button>
+        <label class="btn secondary" style="cursor:pointer">
+          <input id="pickerMulti" type="file" multiple hidden accept=".heic,.heif,.zip,application/zip" />
+          Choose Multiple…
+        </label>
+      </div>
+      <div class="progress" aria-hidden="true"><div class="bar" id="totalBar"></div></div>
+      <small class="subtitle" id="totalLabel">Idle</small>
+    </div>
+
+    <!-- Grid -->
+    <div class="grid" id="grid"></div>
+
+    <div class="footer">
+      All processing happens locally in your browser. EXIF metadata may not be preserved. Multi‑image HEICs convert the first image. Very large files can be memory‑intensive.
     </div>
   </div>
-</section>
 
-<script>
+  <script>
+  // —— tiny utilities ——
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+  const fmtBytes = (n) => n < 1024 ? `${n} B` : n < 1024**2 ? `${(n/1024).toFixed(1)} KB` : n < 1024**3 ? `${(n/1024**2).toFixed(1)} MB` : `${(n/1024**3).toFixed(2)} GB`;
+  const sleep = (ms) => new Promise(r=>setTimeout(r, ms));
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 
-  const form = document.querySelector('form');
-  const input = form.querySelector('input[type="file"]');
-  const convertButton = form.querySelector('button[type="submit"]');
-  const processingMessage = document.createElement('div');
-  processingMessage.innerText = 'Processing... This may take a while. File will download automatically. Images processed so far: 0';
-  processingMessage.style.display = 'none';
-  processingMessage.classList.add('text-blue-500');
-  form.appendChild(processingMessage);
-  
-  let imageCount = 0;
-  
-  function convertHEICtoJPG(blob) {
-  processingMessage.style.display = 'block';
-  return heic2any({
-    blob: blob,
-    toType: 'image/jpeg',
-    quality: 0.8
-  }).then((output) => {
-    const outputBlob = new Blob([output], {type: 'image/jpeg'});
-    const outputUrl = URL.createObjectURL(outputBlob);
-    const link = document.createElement('a');
-    link.href = outputUrl;
-    link.download = blob.name.replace(/\.heic$/i, '.jpg');
-    link.click();
-    imageCount++;
-    updateProcessingMessage();
-  });
-}
+  // —— global state ——
+  let tasks = []; // queue items {id, name, srcBlob, status, el}
+  let outputs = []; // {name, blob}
+  let inFlight = 0, cancelled = false, started = false;
+  let autoConc = Math.max(2, Math.min(4, (navigator.hardwareConcurrency||4)-2));
+  let concurrency = 0; // 0=auto
+  let totalSteps = 0, completedSteps = 0; // for total progress
 
-function updateProcessingMessage() {
-  processingMessage.innerText = `Processing... This may take a while. File will download automatically. Images processed so far: ${imageCount}`;
-  if (imageCount > 0) {
-    processingMessage.style.display = 'block';
-  } else {
-    processingMessage.style.display = 'none';
+  // —— diagnostics ——
+  function setDot(el, ok){ el.style.background = ok ? "var(--ok)" : "var(--err)" }
+  function initDiagnostics(){
+    setDot($('#d-wasm'), typeof WebAssembly !== 'undefined');
+    setDot($('#d-heic'), !!window.heic2any);
+    setDot($('#d-zipr'), !!window.JSZip);
+    setDot($('#d-zipw'), !!window.fflate);
+    $('#parVal').textContent = `${navigator.hardwareConcurrency||4} cores`
   }
-}
 
-  
-  function convertZipToJPG(zipFile) {
-    processingMessage.style.display = 'block';
-    return JSZip.loadAsync(zipFile).then(async (zip) => {
-      const jpgZip = new JSZip();
-  
-      await Promise.all(Object.keys(zip.files).map(async (filename) => {
-        const file = zip.files[filename];
-        if (!file.dir && (file.name.endsWith('.heic') || file.name.endsWith('.HEIC'))) {
-          const output = await heic2any({
-            blob: await file.async('blob'),
-            toType: 'image/jpeg',
-            quality: 0.8
-          });
-          jpgZip.file(file.name.replace(/\.heic$/i, '.jpg'), output);
-          imageCount++;
-          updateProcessingMessage();
-        }
-      }), imageCount = 0);
-  
-      const jpgZipBlob = await jpgZip.generateAsync({type:"blob"});
-      const jpgZipUrl = URL.createObjectURL(jpgZipBlob);
-      const link = document.createElement('a');
-      link.href = jpgZipUrl;
-      link.download = zipFile.name.replace(/\.zip$/i, '_jpg.zip');
-      link.click();
-      processingMessage.innerText = `Processing... This may take a while. File will download automatically. Images processed so far: ${imageCount}`;
-      processingMessage.style.display = 'none';
-    });
+  // —— progress ——
+  function setTotalProgress(pct, label){
+    $('#totalBar').style.width = pct + '%';
+    if(label) $('#totalLabel').textContent = label;
   }
-  
-  convertButton.addEventListener('click', async (event) => {
-    event.preventDefault();
-    const file = input.files[0];
-    if (!file) return;
-    if (file.name.endsWith('.heic')) {
-      await convertHEICtoJPG(file);
-    } else if (file.name.endsWith('.zip')) {
-      await convertZipToJPG(file);
+  function bumpTotal(step=1, label){ completedSteps += step; setTotalProgress(Math.round(100*completedSteps/Math.max(1,totalSteps)), label) }
+
+  function fileCard(name, size){
+    const card = document.createElement('div'); card.className = 'card';
+    card.innerHTML = `
+      <div class="thumb" aria-live="polite"><span style="opacity:.7">Preview</span></div>
+      <div class="meta">
+        <div class="name" title="${name}">${name}</div>
+        <div class="ring" aria-label="progress ring"><span class="ringNum">0%</span></div>
+      </div>
+      <div class="meta">
+        <div class="status">Queued</div>
+        <div class="size">${size?fmtBytes(size):''}</div>
+      </div>`;
+    $('#grid').appendChild(card);
+    return {
+      el: card,
+      setStatus: (t)=> card.querySelector('.status').textContent = t,
+      setRing: (pct)=>{ card.querySelector('.ring').style.setProperty('--p', pct); card.querySelector('.ringNum').textContent = pct+"%"; },
+      done: ()=>{ const r=card.querySelector('.ring'); r.classList.add('done'); r.textContent='Done' }
     }
+  }
+
+  // —— queue engine ——
+  async function runQueue(){
+    if(started) return; started = true; cancelled = false;
+    $('#cancel').disabled = false;
+    setTotalProgress(0, 'Starting…');
+    const pool = [];
+    const conc = concurrency || autoConc; // auto if 0
+    while(tasks.some(t=>t.status!=='done') && !cancelled){
+      while(inFlight < conc){
+        const next = tasks.find(t=>t.status==='queued');
+        if(!next) break;
+        inFlight++; next.status='running';
+        pool.push(convertOne(next).finally(()=>{ inFlight--; }));
+      }
+      await Promise.race(pool).catch(()=>{});
+    }
+    await Promise.allSettled(pool);
+
+    $('#cancel').disabled = true;
+    started = false;
+    if(cancelled){ setTotalProgress(0, 'Canceled'); return; }
+
+    // Build zip if more than 1 output
+    if(outputs.length === 0) return;
+    if(outputs.length === 1){
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(outputs[0].blob);
+      a.download = outputs[0].name; a.textContent = 'Download ' + outputs[0].name;
+      $('#dlAll').disabled = false; $('#dlAll').onclick = ()=> a.click();
+      $('#summary').textContent = `Ready: ${outputs[0].name} (${fmtBytes(outputs[0].blob.size)})`;
+      celebrate();
+    } else {
+      setTotalProgress(98, 'Packaging .zip…');
+      const filesObj = {};
+      outputs.forEach(o=> filesObj[o.name] = new Uint8Array());
+      // Gather ArrayBuffers with minimal compression (store)
+      const filePairs = [];
+      for(const o of outputs){
+        const ab = await o.blob.arrayBuffer();
+        filePairs.push([o.name, new Uint8Array(ab)]);
+      }
+      const zipped = fflate.zipSync(Object.fromEntries(filePairs), { level: 0 }); // store only for speed
+      const zipBlob = new Blob([zipped], { type: 'application/zip' });
+      const url = URL.createObjectURL(zipBlob);
+      $('#dlAll').disabled = false; $('#dlAll').onclick = ()=>{
+        const a = document.createElement('a'); a.href = url; a.download = 'converted-jpgs.zip'; a.click();
+      };
+      $('#summary').textContent = `Ready: ${outputs.length} images · ${fmtBytes(zipBlob.size)} .zip`;
+      setTotalProgress(100, 'Done');
+      celebrate();
+    }
+  }
+
+  async function convertOne(task){
+    const view = task.view;
+    try{
+      view.setStatus('Reading…'); view.setRing(10);
+      const heicBlob = task.srcBlob;
+
+      // smooth staged progress — conversion is the heavy step but heic2any lacks internal progress events
+      view.setStatus('Converting…'); view.setRing(35);
+      const quality = parseInt($('#quality').value, 10) / 100;
+      const jpgBlob = await window.heic2any({ blob: heicBlob, toType: 'image/jpeg', quality });
+
+      if(cancelled) return;
+      view.setStatus('Finalizing…'); view.setRing(80);
+
+      // Create preview
+      const url = URL.createObjectURL(jpgBlob);
+      const img = new Image(); img.decoding = 'async'; img.src = url;
+      img.onload = ()=>{ const t = task.card.querySelector('.thumb'); t.innerHTML=''; t.appendChild(img) };
+
+      // Filename swap
+      const name = task.name.replace(/\.(heic|heif)$/i, '') + '.jpg';
+      outputs.push({ name, blob: jpgBlob });
+
+      view.setRing(100); view.done(); view.setStatus('Done');
+      bumpTotal(1, `Converted ${outputs.length}/${tasks.length}…`);
+      task.status='done';
+    }catch(err){
+      console.error(err);
+      task.status='done';
+      task.card.querySelector('.status').textContent = 'Failed';
+      task.card.style.outline = '2px solid var(--err)';
+      bumpTotal(1, 'A file failed to convert');
+    }
+  }
+
+  // —— file intake ——
+  async function handleFiles(fileList){
+    resetSession(false);
+    const files = Array.from(fileList||[]);
+    if(files.length === 0) return;
+    // Partition by type
+    const zips = files.filter(f=>/\.zip$/i.test(f.name) || f.type === 'application/zip');
+    const heics = files.filter(f=>/\.(heic|heif)$/i.test(f.name));
+
+    let totalCount = 0; outputs = []; tasks = []; completedSteps=0;
+
+    // HEICs directly
+    for(const f of heics){
+      const cardView = fileCard(f.name, f.size);
+      const id = crypto.randomUUID();
+      tasks.push({ id, name: f.name, srcBlob: f, status:'queued', card: cardView.el, view: cardView });
+      totalCount++;
+    }
+
+    // Zips
+    for(const z of zips){
+      $('#totalLabel').textContent = `Reading ZIP: ${z.name}`;
+      const ab = await z.arrayBuffer();
+      const zip = await JSZip.loadAsync(ab, { checkCRC32: true, createFolders: true });
+      const entries = [];
+      zip.forEach((path, entry)=>{ if(!entry.dir && /\.(heic|heif)$/i.test(entry.name)) entries.push(entry) });
+      if(entries.length === 0){ continue; }
+
+      for(const entry of entries){
+        const blob = await entry.async('blob');
+        const f = new File([blob], entry.name, { type: 'image/heic' });
+        const cardView = fileCard(entry.name, blob.size);
+        const id = crypto.randomUUID();
+        tasks.push({ id, name: entry.name, srcBlob: f, status:'queued', card: cardView.el, view: cardView });
+      }
+      totalCount += entries.length;
+    }
+
+    if(totalCount === 0){ $('#totalLabel').textContent = 'No HEIC files found.'; return; }
+
+    totalSteps = totalCount; // 1 step per file
+    $('#summary').textContent = `${totalCount} file(s) queued`;
+    setTotalProgress(2, 'Queued…');
+
+    runQueue();
+  }
+
+  // —— UI wiring ——
+  function resetSession(clearGrid=true){
+    cancelled = false; started = false; inFlight = 0; outputs = []; completedSteps = 0; totalSteps = 0;
+    $('#cancel').disabled = true; $('#dlAll').disabled = true; $('#totalLabel').textContent='Idle'; setTotalProgress(0);
+    if(clearGrid) $('#grid').innerHTML = '';
+  }
+
+  function cancelAll(){ cancelled = true; $('#cancel').disabled = true; $('#totalLabel').textContent='Canceling…'; }
+
+  function celebrate(){
+    const cvs = $('#confetti'); const ctx = cvs.getContext('2d');
+    const { innerWidth:w, innerHeight:h } = window; cvs.width=w; cvs.height=h;
+    const N = 160; const parts = Array.from({length:N}, (_,i)=>({
+      x: Math.random()*w, y: -10, vx: (Math.random()-.5)*2, vy: 2+Math.random()*3,
+      r: 3+Math.random()*4, a: 1, hue: 180+Math.random()*140
+    }));
+    let t=0; const anim = ()=>{
+      ctx.clearRect(0,0,w,h);
+      parts.forEach(p=>{
+        p.vy += 0.03; p.x += p.vx; p.y += p.vy; p.a -= .006; p.a=Math.max(0,p.a);
+        ctx.globalAlpha = p.a; ctx.fillStyle = `hsl(${p.hue}, 90%, 60%)`;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+      });
+      t++; if(t<600 && parts.some(p=>p.a>0)) requestAnimationFrame(anim); else ctx.clearRect(0,0,w,h);
+    }; anim();
+  }
+
+  // Inputs
+  $('#pickOne').onclick = ()=> $('#picker').click();
+  $('#picker').onchange = (e)=> handleFiles(e.target.files);
+  $('#pickerMulti').onchange = (e)=> handleFiles(e.target.files);
+
+  // Drag & drop
+  const dz = $('#drop');
+  ;['dragenter','dragover'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); dz.classList.add('drag') }))
+  ;['dragleave','dragend','drop'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag') }))
+  dz.addEventListener('drop', (e)=>{
+    const files = e.dataTransfer.files; handleFiles(files);
   });
-  
-  input.addEventListener('change', () => {
-    convertButton.disabled = !input.value;
+
+  // Controls
+  $('#quality').oninput = (e)=> $('#qualLabel').textContent = e.target.value + '%';
+  $('#concurrency').oninput = (e)=>{
+    const v = parseInt(e.target.value, 10); concurrency = v; $('#concLabel').textContent = v===0? 'auto' : v;
+  };
+  $('#clear').onclick = ()=> resetSession();
+  $('#cancel').onclick = ()=> cancelAll();
+
+  // Boot
+  window.addEventListener('load', ()=>{
+    initDiagnostics();
+    $('#concLabel').textContent = 'auto';
+    if(!window.heic2any){ $('#totalLabel').textContent='HEIC engine not loaded. Check your connection.' }
   });
-  
+
   </script>
-  
-
-    </body>
-
+</body>
 </html>
-  
